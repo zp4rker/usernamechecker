@@ -4,13 +4,15 @@ import org.jsoup.Jsoup
 import java.net.URL
 
 fun main() {
-    while (true) {
+    nameHistory("woahchill")
+
+    /*while (true) {
         val input = readLine() ?: break
         if (input.isEmpty()) break
 
         val username = search(input)
         println("${username.name} - ${username.status}")
-    }
+    }*/
 }
 
 private fun search(username: String): Username {
