@@ -5,7 +5,7 @@ import org.json.JSONObject
 import java.net.URL
 
 fun searchName(username: String, at: Long = System.currentTimeMillis() / 1000): String? {
-    val url = URL("https://api.mojang.com/users/profiles/minecraft/$username${if (at < 0) "" else "?at=$at"}")
+    val url = URL("https://api.mojang.com/users/profiles/minecraft/$username?at=$at")
     val con = url.openConnection()
 
     val input = con.getInputStream()
@@ -33,6 +33,30 @@ fun getProfile(uuid: String): Profile {
         profile.usernames.add(Username(name, updated))
     }
     return profile
+}
+
+/*
+* get original/first user of name
+* get current user of name or null
+* iterate users of name until same as current or returning null
+* add each user to array
+* */
+
+fun getHistory(username: String): NameHistory {
+    val history = NameHistory()
+
+    var time: Long = 0
+    var profile = getProfile(searchName(username, time) ?: return history).also { history.profiles.add(it) }
+
+    while (true) {
+        val index = profile.usernames.indexOfFirst { it.name.equals(username, true) && it.updated >= time }
+        val temp = profile.usernames.getOrNull(index + 1) ?: break
+        time = temp.updated / 1000 + 1
+
+        profile = getProfile(searchName(username, time) ?: break).also { history.profiles.add(it) }
+    }
+
+    return history
 }
 
 data class NameHistory(val profiles: MutableList<Profile> = mutableListOf())
