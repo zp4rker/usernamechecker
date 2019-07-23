@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URL
 
-fun username(username: String, at: Long = -1): JSONObject {
+fun searchName(username: String, at: Long = System.currentTimeMillis() / 1000): String? {
     val url = URL("https://api.mojang.com/users/profiles/minecraft/$username${if (at < 0) "" else "?at=$at"}")
     val con = url.openConnection()
 
@@ -12,10 +12,10 @@ fun username(username: String, at: Long = -1): JSONObject {
     val response = input.reader().readText()
     input.close()
 
-    return JSONObject(response)
+    return if (response.isEmpty()) null else JSONObject(response).getString("id")
 }
 
-fun profile(uuid: String): JSONArray {
+fun getProfile(uuid: String): Profile {
     val url = URL("https://api.mojang.com/user/profiles/$uuid/names")
     val con = url.openConnection()
 
@@ -23,22 +23,18 @@ fun profile(uuid: String): JSONArray {
     val response = input.reader().readText()
     input.close()
 
-    return JSONArray(response)
+    val raw = JSONArray(response)
+
+    val profile = Profile(uuid)
+    for (obj in raw) {
+        if (obj !is JSONObject) continue
+        val name = obj.getString("name")
+        val updated = obj.optLong("changedToAt", 0)
+        profile.usernames.add(Username(name, updated))
+    }
+    return profile
 }
 
-fun nameHistory(username: String)/*: JSONArray*/ {
-    var current = username(username, 0)
-    var profile = profile(current.getString("id"))
-    while (!profile.getJSONObject(profile.length() - 1).getString("name").equals(username, true)) {
-        println(profile)
-        for ((index, obj) in profile.withIndex()) {
-            if (obj !is JSONObject) continue
-            if (!obj.getString("name").equals(username, true)) continue
-            if (profile.length() == index + 1) break
-            current = username(username, profile.getJSONObject(index + 1).getLong("changedToAt") + 1)
-            profile = profile(current.getString("id"))
-            break
-        }
-    }
-    println(profile)
-}
+data class NameHistory(val profiles: MutableList<Profile> = mutableListOf())
+data class Profile(val uuid: String?, val usernames: MutableList<Username> = mutableListOf())
+data class Username(val name: String, val updated: Long)
