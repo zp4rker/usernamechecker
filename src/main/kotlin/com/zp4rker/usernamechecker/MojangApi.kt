@@ -4,6 +4,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URL
 
+fun checkAvailability(username: String): String {
+    return when {
+        searchName(username) != null -> "not available"
+        username.toCharArray().any { !it.isLetterOrDigit() } -> "invalid characters"
+        username.length < 3 -> "too short"
+        searchName(username) == null -> "available"
+        else -> "not available"
+    }
+}
+
 fun searchName(username: String, at: Long = System.currentTimeMillis() / 1000): String? {
     val url = URL("https://api.mojang.com/users/profiles/minecraft/$username?at=$at")
     val con = url.openConnection()
@@ -34,13 +44,6 @@ fun getProfile(uuid: String): Profile {
     }
     return profile
 }
-
-/*
-* get original/first user of name
-* get current user of name or null
-* iterate users of name until same as current or returning null
-* add each user to array
-* */
 
 fun getHistory(username: String): NameHistory {
     val history = NameHistory()
